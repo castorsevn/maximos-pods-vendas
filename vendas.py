@@ -2,10 +2,11 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
 import os
+import time
 
 st.set_page_config(page_title="Maximos Pods", layout="wide", initial_sidebar_state="expanded")
 
-# ====================== SUAS INFORMAÇÕES ======================
+# ====================== GITHUB ======================
 GITHUB_USER = "castorsevn"
 REPO_NAME = "maximos-pods-vendas"
 
@@ -55,7 +56,7 @@ def salvar_dados(df):
 
 df = carregar_dados()
 
-# Filtro de data
+# Filtro
 st.sidebar.markdown("### 📅 Filtro por Período")
 data_inicio = st.sidebar.date_input("Data Inicial", datetime.today() - timedelta(days=30))
 data_fim = st.sidebar.date_input("Data Final", datetime.today())
@@ -68,7 +69,7 @@ else:
 
 aba = st.sidebar.selectbox("Menu", ["Nova Venda", "Dashboard", "Clientes", "Histórico Completo"])
 
-# ====================== NOVA VENDA ======================
+# ====================== PÁGINAS ======================
 if aba == "Nova Venda":
     st.subheader("📌 Nova Venda")
     col1, col2 = st.columns(2)
@@ -107,7 +108,6 @@ if aba == "Nova Venda":
         else:
             st.error("Preencha os campos obrigatórios")
 
-# ====================== DASHBOARD ======================
 elif aba == "Dashboard":
     st.subheader("📊 Dashboard")
     if not df_filtrado.empty:
@@ -124,7 +124,6 @@ elif aba == "Dashboard":
     else:
         st.info("Nenhuma venda no período.")
 
-# ====================== CLIENTES ======================
 elif aba == "Clientes":
     st.subheader("👥 Clientes")
     if not df_filtrado.empty:
@@ -132,7 +131,6 @@ elif aba == "Clientes":
         clientes.columns = ['Cliente', 'Total Gasto', 'Compras']
         st.dataframe(clientes.sort_values('Total Gasto', ascending=False), use_container_width=True)
 
-# ====================== HISTÓRICO ======================
 else:
     st.subheader("📋 Histórico Completo")
     if not df_filtrado.empty:
@@ -140,35 +138,22 @@ else:
 
 # ====================== RODAPÉ COM HORÁRIO DE BRASÍLIA ======================
 st.markdown("---")
-col1, col2, col3 = st.columns([3, 3, 3])
 
-with col2:
-    st.markdown("""
-        <div style='text-align: center;'>
-            <p style='margin:0; color:#888;'>🕒 Horário de Brasília</p>
-            <p id='brasilia_clock' style='font-size: 1.8rem; font-weight: bold; color: #00FF88; margin:0; font-family: Courier New;'>
+# Contador de horas em Python (sem JavaScript)
+clock_placeholder = st.empty()
+
+while True:
+    agora = datetime.now(ZoneInfo("America/Sao_Paulo"))
+    hora_brasilia = agora.strftime("%H:%M:%S")
+    
+    clock_placeholder.markdown(f"""
+        <div style='text-align: center; background-color: #1E1E2E; padding: 20px; border-radius: 12px; margin: 10px 0;'>
+            <p style='margin:0; color:#AAAAAA; font-size: 1.1rem;'>🕒 Horário Atual de Brasília</p>
+            <p style='font-size: 2.8rem; font-weight: bold; color: #00FF88; margin: 8px 0 0 0; font-family: Courier New;'>
+                {hora_brasilia}
             </p>
         </div>
     """, unsafe_allow_html=True)
-
-st.caption("✅ Dados salvos automaticamente em tempo real | Maximos Pods © 2026")
-
-# Relógio ao vivo de Brasília
-st.markdown("""
-    <script>
-        function updateBrasiliaClock() {
-            const now = new Date();
-            const options = { 
-                timeZone: 'America/Sao_Paulo',
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit',
-                hour12: false 
-            };
-            const timeString = now.toLocaleTimeString('pt-BR', options);
-            document.getElementById('brasilia_clock').innerText = timeString;
-        }
-        setInterval(updateBrasiliaClock, 1000);
-        updateBrasiliaClock();
-    </script>
-""", unsafe_allow_html=True)
+    
+    time.sleep(1)
+    st.rerun()   # Atualiza a tela
