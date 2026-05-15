@@ -2,32 +2,40 @@ import streamlit as st
 from datetime import datetime, timedelta
 import pandas as pd
 import os
-import time
+from zoneinfo import ZoneInfo
 
 st.set_page_config(page_title="Maximos Pods", layout="wide", initial_sidebar_state="expanded")
 
-# ====================== CSS - Visual Digital ======================
-st.markdown("""
-    <style>
-    .main {background-color: #0E1117;}
-    .big-number {font-size: 2.8rem; font-weight: bold; color: #00FF88; text-align: center; margin: 0;}
-    .clock {font-size: 1.4rem; color: #00FF88; font-family: 'Courier New', monospace; text-align: center;}
-    hr {border-color: #333;}
-    </style>
-""", unsafe_allow_html=True)
+# ====================== CONFIGURAÇÃO GITHUB ======================
+GITHUB_USER = "SEU_USUARIO_AQUI"          # ← TROQUE AQUI
+REPO_NAME = "SEU_REPOSITORIO_AQUI"        # ← TROQUE AQUI
 
-# ====================== LOGO + BANNER ======================
-col1, col2 = st.columns([1, 5])
-with col1:
-    st.markdown("**MAXIMOS PODS**")
-with col2:
+LOGO_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/main/logo.jfif"
+BANNER_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{REPO_NAME}/main/banner.jfif"
+
+# ====================== CABEÇALHO ======================
+col_logo, col_titulo = st.columns([1.2, 5])
+
+with col_logo:
+    try:
+        st.image(LOGO_URL, width=130)
+    except:
+        st.markdown("**MAXIMOS**")
+
+with col_titulo:
     st.markdown("""
         <h1 style='margin: 0; color: #FF4B4B;'>MAXIMOS PODS</h1>
-        <p style='color: #AAAAAA; margin: 0;'>Sistema Profissional de Vendas</p>
+        <p style='color: #AAAAAA; margin-top: 5px;'>Sistema Profissional de Vendas</p>
     """, unsafe_allow_html=True)
+
+try:
+    st.image(BANNER_URL, use_column_width=True)
+except:
+    st.markdown("---")
 
 st.markdown("---")
 
+# ====================== DADOS ======================
 ARQUIVO = "vendas_maximos_pods.csv"
 
 def carregar_dados():
@@ -48,7 +56,7 @@ def salvar_dados(df):
 
 df = carregar_dados()
 
-# ====================== FILTRO ======================
+# Filtro
 st.sidebar.markdown("### 📅 Filtro por Período")
 data_inicio = st.sidebar.date_input("Data Inicial", datetime.today() - timedelta(days=30))
 data_fim = st.sidebar.date_input("Data Final", datetime.today())
@@ -61,7 +69,7 @@ else:
 
 aba = st.sidebar.selectbox("Menu", ["Nova Venda", "Dashboard", "Clientes", "Histórico Completo"])
 
-# ===================== NOVA VENDA =====================
+# ====================== NOVA VENDA ======================
 if aba == "Nova Venda":
     st.subheader("📌 Nova Venda")
     col1, col2 = st.columns(2)
@@ -100,7 +108,7 @@ if aba == "Nova Venda":
         else:
             st.error("Preencha os campos obrigatórios")
 
-# ===================== DASHBOARD =====================
+# ====================== DASHBOARD ======================
 elif aba == "Dashboard":
     st.subheader("📊 Dashboard")
     if not df_filtrado.empty:
@@ -109,15 +117,15 @@ elif aba == "Dashboard":
         qtd = len(df_filtrado)
         
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total de Vendas", f"{qtd} un")
+        col1.metric("Total de Vendas", f"{qtd}")
         col2.metric("Faturamento", f"R$ {fat:,.2f}")
         col3.metric("Lucro", f"R$ {lucro:,.2f}")
         
         st.bar_chart(df_filtrado.groupby(df_filtrado['Data'].dt.date)['Valor_Liquido'].sum())
     else:
-        st.info("Nenhuma venda no período selecionado.")
+        st.info("Nenhuma venda no período.")
 
-# ===================== CLIENTES =====================
+# ====================== CLIENTES ======================
 elif aba == "Clientes":
     st.subheader("👥 Clientes")
     if not df_filtrado.empty:
@@ -125,36 +133,18 @@ elif aba == "Clientes":
         clientes.columns = ['Cliente', 'Total Gasto', 'Compras']
         st.dataframe(clientes.sort_values('Total Gasto', ascending=False), use_container_width=True)
 
-# ===================== HISTÓRICO =====================
+# ====================== HISTÓRICO ======================
 else:
     st.subheader("📋 Histórico Completo")
     if not df_filtrado.empty:
         st.dataframe(df_filtrado.sort_values('Data', ascending=False), use_container_width=True)
 
-# ===================== CONTADOR DE HORAS + STATUS =====================
+# ====================== RODAPÉ COM HORÁRIO DE BRASÍLIA ======================
 st.markdown("---")
-col_a, col_b, col_c = st.columns([3, 2, 3])
+col1, col2, col3 = st.columns([3, 3, 3])
 
-with col_b:
-    st.markdown(f"""
+with col2:
+    st.markdown("""
         <div style='text-align: center;'>
-            <p style='margin:0; color:#666;'>🕒 Hora atual</p>
-            <p class='clock' id='clock'>{datetime.now().strftime('%H:%M:%S')}</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-st.caption("✅ Dados salvos automaticamente em tempo real | Maximos Pods © 2026")
-
-# Atualização automática do relógio (JavaScript)
-st.markdown("""
-    <script>
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                              now.getMinutes().toString().padStart(2, '0') + ':' + 
-                              now.getSeconds().toString().padStart(2, '0');
-            document.getElementById('clock').innerText = timeString;
-        }
-        setInterval(updateClock, 1000);
-    </script>
-""", unsafe_allow_html=True)
+            <p style='margin:0; color:#888;'>🕒 Horário de Brasília</p>
+            <p id='brasilia_clock' style='font-size: 1.6rem; font-weight:
